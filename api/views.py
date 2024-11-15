@@ -9,6 +9,7 @@ from .serializers               import TimeEntrySerializer
 # Create your views here.
 
 
+#@csrf_exempt
 class TimeEntryView(APIView):
     def post(self, request, *args, **kwargs):
         serializer  = TimeEntrySerializer(data=request.data)

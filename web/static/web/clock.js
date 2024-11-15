@@ -66,7 +66,7 @@ function popClocks(){
                     jobDiv.appendChild(manualTime)
                     const clockOutBtn       = document.createElement("button")
                     clockOutBtn.innerText   = "Clock Out"
-                    clockOutBtn.addEventListener("click", ()=>clockOut(key, manualTime.value, notes.value))
+                    clockOutBtn.addEventListener("click", ()=>clockOut(key, manualTime.value, notesInput.value))
                     const cancelBtn         = document.createElement("button")
                     cancelBtn.innerText     = "Cancel"
                     cancelBtn.addEventListener("click", ()=>deleteClock(key))
@@ -126,36 +126,40 @@ function clockIn(inNumber, workType){
     popClocks()
 }
 
-function clockOut(invoice, manTime, notes){
-    const jobs = JSON.parse(localStorage.getItem("track-time"))
+function clockOut(invoice_number, manTime, notes){
+    	const jobs = JSON.parse(localStorage.getItem("track-time"))
+	let time_spent
+    	const timeStart     = new Date(jobs[invoice_number][whois].timeStart)
+	if(!manTime){
+		const start         = Math.floor(timeStart.getTime() / 1000)
 
-    const timeStart     = new Date(jobs[invoice][whois].timeStart)
-    const start         = Math.floor(timeStart.getTime() / 1000)
+    		const date          = new Date()
+	    	let diff            = date - timeStart
+    		diff                /= 1000
+    		const seconds       = Math.round(diff)
+    		time_spent    = Math.round(((seconds / 60) / 60) * 100) / 100
+	}else{
+		time_spent	= manTime
+	}
 
-    const date          = new Date()
-    let diff            = date - timeStart
-    diff                /= 1000
-    const seconds       = Math.round(diff)
-    const time          = Math.round(((seconds / 60) / 60) * 100) / 100
-
-    fetch(`${wpVars.restURL}track-time/v1/invoice`,{
+	const csrfToken = document.querySelector('[name="csrfmiddlewaretoken"]').value
+    fetch("/api/time-entry/",{
         method: "POST",
         headers: {
             "Content-Type": "application/json",
-            "X-WP-Nonce": wpVars.wpNonce,
+		"X-CSRFToken":	csrfToken,
         },
         body: JSON.stringify({
-            time,
-            manTime,
-            start,
-            invoice,
-            notes,
-            whois
+			invoice_number,
+			employee_number:	whois,
+			time_spent,
+			notes,
+			date:			timeStart.toISOString().split("T")[0],
         }),
 	})
 	.then(res=>res.json())
 	.then(obj=>{
         console.log(obj)
-        deleteClock(invoice)
+        deleteClock(invoice_number)
     })
 }
